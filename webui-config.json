@@ -1,0 +1,5 @@
+{
+  "mcpServers": "[{\"url\":\"http://localhost:8808/sse\",\"name\":\"DuckDuckGo Search\"}]",
+  "agenticMaxTurns": 20,
+  "alwaysShowAgenticTurns": true
+}
