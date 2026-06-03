@@ -1,15 +1,18 @@
 """DuckDuckGo web search MCP server — no API key required."""
 
 from mcp.server.fastmcp import FastMCP
-from duckduckgo_search import DDGS
+
+try:
+    from ddgs import DDGS
+except ImportError:
+    from duckduckgo_search import DDGS  # legacy name
 
 mcp = FastMCP("duckduckgo-search")
 
 @mcp.tool()
 def web_search(query: str, max_results: int = 5) -> str:
     """Search the web using DuckDuckGo. Returns titles, URLs, and snippets."""
-    with DDGS() as ddgs:
-        results = list(ddgs.text(query, max_results=max_results))
+    results = list(DDGS().text(query, max_results=max_results))
     if not results:
         return "No results found."
     lines = []
@@ -20,8 +23,7 @@ def web_search(query: str, max_results: int = 5) -> str:
 @mcp.tool()
 def news_search(query: str, max_results: int = 5) -> str:
     """Search recent news using DuckDuckGo."""
-    with DDGS() as ddgs:
-        results = list(ddgs.news(query, max_results=max_results))
+    results = list(DDGS().news(query, max_results=max_results))
     if not results:
         return "No news found."
     lines = []
@@ -30,4 +32,4 @@ def news_search(query: str, max_results: int = 5) -> str:
     return "\n".join(lines)
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")

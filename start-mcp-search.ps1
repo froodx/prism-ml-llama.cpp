@@ -14,4 +14,5 @@ Write-Host "=== DuckDuckGo MCP Server ===" -ForegroundColor Cyan
 Write-Host "Endpoint : http://localhost:$McpPort/sse" -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop.`n"
 
-npx supergateway --port $McpPort --stdio "python `"$ServerPy`""
+$env:PYTHONUNBUFFERED = "1"
+npx supergateway --port $McpPort --stdio "python -u `"$ServerPy`""
