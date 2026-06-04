@@ -2,7 +2,6 @@
 	import { Square } from '@lucide/svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
-		BonsaiSwitcher,
 		ChatFormActionAttachmentsDropdown,
 		ChatFormActionAttachmentsSheet,
 		ChatFormActionRecord,
@@ -222,26 +221,22 @@
 	</div>
 
 	<div class="ml-auto flex items-center gap-1.5">
-		{#if isRouter}
-			{#if isMobile.current}
-				<ModelsSelectorSheet
-					disabled={disabled || isOffline}
-					bind:this={selectorModelRef}
-					currentModel={conversationModel}
-					forceForegroundText
-					useGlobalSelection
-				/>
-			{:else}
-				<ModelsSelector
-					disabled={disabled || isOffline}
-					bind:this={selectorModelRef}
-					currentModel={conversationModel}
-					forceForegroundText
-					useGlobalSelection
-				/>
-			{/if}
+		{#if isMobile.current}
+			<ModelsSelectorSheet
+				disabled={disabled || isOffline}
+				bind:this={selectorModelRef}
+				currentModel={conversationModel}
+				forceForegroundText
+				useGlobalSelection
+			/>
 		{:else}
-			<BonsaiSwitcher />
+			<ModelsSelector
+				disabled={disabled || isOffline}
+				bind:this={selectorModelRef}
+				currentModel={conversationModel}
+				forceForegroundText
+				useGlobalSelection
+			/>
 		{/if}
 	</div>
 
