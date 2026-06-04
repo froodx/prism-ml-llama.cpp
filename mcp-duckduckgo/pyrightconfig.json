@@ -1,0 +1,11 @@
+{
+    "pythonPath": "C:\\ProgramData\\anaconda3\\python.exe",
+    "venvPath": "C:\\ProgramData\\anaconda3",
+    "extraPaths": [
+        "C:\\ProgramData\\anaconda3\\Lib\\site-packages",
+        "C:\\Users\\geoff\\AppData\\Roaming\\Python\\Python311\\site-packages"
+    ],
+    "typeCheckingMode": "off",
+    "reportMissingImports": "none",
+    "reportMissingModuleSource": "none"
+}
