@@ -12,10 +12,10 @@ $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
 $ServerExe   = "$ProjectRoot\build\bin\Release\llama-server.exe"
 $WebuiConfig = "$ProjectRoot\webui-config.json"
-$McpScript   = "$ProjectRoot\start-mcp-search.ps1"
+$ServerPy    = "$ProjectRoot\mcp-duckduckgo\server.py"
 $Port        = 8080
+$McpPort     = 8808
 
-# Model definitions — update paths if models live elsewhere
 $Models = @(
     [PSCustomObject]@{
         Name = "Bonsai 1.7B  Q1_0  (fast, ~250 MB)"
@@ -27,7 +27,7 @@ $Models = @(
     }
 )
 
-# --- Preflight checks ---
+# --- Preflight ---
 if (-not (Test-Path $ServerExe)) {
     Write-Error "llama-server.exe not found. Run .\cmake-build.ps1 first."
     exit 1
@@ -51,7 +51,7 @@ if ($Model -eq 0) {
 
 $Selected = $Models[$Model - 1]
 if (-not (Test-Path $Selected.Path)) {
-    Write-Error "Model file not found: $($Selected.Path)"
+    Write-Error "Model not found: $($Selected.Path)"
     exit 1
 }
 
@@ -61,22 +61,58 @@ Write-Host "  File   : $($Selected.Path)"
 Write-Host "  Web UI : http://localhost:$Port"
 Write-Host ""
 
-# --- Start MCP server in a separate window ---
-Write-Host "Starting DuckDuckGo MCP server..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-NoProfile", "-Command", "& '$McpScript'" -WindowStyle Normal
-Start-Sleep -Seconds 3
+# --- Kill anything already on our ports ---
+foreach ($p in @($McpPort, $Port)) {
+    Get-NetTCPConnection -LocalPort $p -ErrorAction SilentlyContinue |
+        ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
+}
 
-# --- Open browser after server is ready ---
-Start-Job -ScriptBlock { Start-Sleep 5; Start-Process "http://localhost:8080" } | Out-Null
+# --- Start MCP server as a background job in this same shell ---
+Write-Host "Starting DuckDuckGo MCP server (port $McpPort)..." -ForegroundColor Yellow
+$env:PYTHONUNBUFFERED = "1"
+$mcpJob = Start-Job -ScriptBlock {
+    param($root, $py, $port)
+    Set-Location $root
+    $env:PYTHONUNBUFFERED = "1"
+    npx supergateway --port $port --cors --stdio "python -u `"$py`""
+} -ArgumentList $ProjectRoot, $ServerPy, $McpPort
+
+# Wait up to 15s for port 8808 to open
+$deadline = [DateTime]::Now.AddSeconds(15)
+while ([DateTime]::Now -lt $deadline) {
+    $conn = Get-NetTCPConnection -LocalPort $McpPort -ErrorAction SilentlyContinue
+    if ($conn) { break }
+    Start-Sleep -Milliseconds 500
+}
+
+if (-not (Get-NetTCPConnection -LocalPort $McpPort -ErrorAction SilentlyContinue)) {
+    Write-Host "MCP server output:" -ForegroundColor Red
+    Receive-Job $mcpJob
+    Write-Error "MCP server failed to start on port $McpPort"
+    exit 1
+}
+Write-Host "  MCP server ready at http://localhost:$McpPort/sse" -ForegroundColor Green
+
+# --- Open browser after server warms up ---
+Start-Job -ScriptBlock { Start-Sleep 6; Start-Process "http://localhost:8080" } | Out-Null
 
 # --- Start llama-server (foreground — Ctrl+C to stop) ---
-Write-Host "Starting llama-server... (Ctrl+C to stop)`n" -ForegroundColor Cyan
-& $ServerExe `
-    -m $Selected.Path `
-    --host 0.0.0.0 `
-    --port $Port `
-    -ngl 0 `
-    --ctx-size 8192 `
-    --threads ([Environment]::ProcessorCount) `
-    --webui-mcp-proxy `
-    --webui-config-file $WebuiConfig
+Write-Host ""
+Write-Host "Starting llama-server... (Ctrl+C to stop)" -ForegroundColor Cyan
+Write-Host ""
+
+try {
+    & $ServerExe `
+        -m $Selected.Path `
+        --host 0.0.0.0 `
+        --port $Port `
+        -ngl 0 `
+        --ctx-size 8192 `
+        --threads ([Environment]::ProcessorCount) `
+        --webui-mcp-proxy `
+        --webui-config-file $WebuiConfig
+} finally {
+    Write-Host "`nStopping MCP server..." -ForegroundColor Yellow
+    Stop-Job $mcpJob -ErrorAction SilentlyContinue
+    Remove-Job $mcpJob -ErrorAction SilentlyContinue
+}

@@ -17,4 +17,4 @@ echo "Endpoint: http://localhost:$MCP_PORT/sse"
 echo "Press Ctrl+C to stop."
 echo ""
 
-PYTHONUNBUFFERED=1 npx supergateway --port "$MCP_PORT" --stdio "python3 -u '$SERVER_PY'"
+PYTHONUNBUFFERED=1 npx supergateway --port "$MCP_PORT" --cors --stdio "python3 -u '$SERVER_PY'"

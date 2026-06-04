@@ -15,4 +15,4 @@ Write-Host "Endpoint : http://localhost:$McpPort/sse" -ForegroundColor Green
 Write-Host "Press Ctrl+C to stop.`n"
 
 $env:PYTHONUNBUFFERED = "1"
-npx supergateway --port $McpPort --stdio "python -u `"$ServerPy`""
+npx supergateway --port $McpPort --cors --stdio "python -u `"$ServerPy`""
