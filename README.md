@@ -2,43 +2,34 @@
 > This is a custom fork of the [Prism-ML fork of llama.cpp](https://github.com/PrismML-Eng/llama.cpp),
 > itself synced to the main llama.cpp repo.
 >
-> **The purpose of this fork is to run Prism-ML's specialised 1-bit and Ternary Bonsai models at full speed on Linux.**
-> It adds an AVX512 kernel for the `Q1_0_g128` quantisation format, turning what was
-> effectively a scalar fallback into a vectorised dot-product that achieves ~130 tokens/sec
-> on a 32-thread AVX512 machine (Zen 4, Ice Lake+) — without any GPU required.
->
-> It also ships ready-to-use launcher scripts, a live model switcher, a DuckDuckGo MCP
-> search server, and a one-command build that auto-detects AVX512 via `-march=native`.
+> **Purpose: run PrismML's 1-bit and Ternary Bonsai models at full speed on Linux.**
+> Ships an AVX512 kernel, a full model manager inside the chat UI, DuckDuckGo web search
+> via MCP, and a one-command build. No GPU required for the Bonsai models.
 >
 > Not an official Prism-ML product. Experimental.
 
 ---
 
-## 📖 Read: PrismML Ternary Bonsai — Blog & Benchmarks
+## 📖 Read first: PrismML Ternary Bonsai — Blog & Benchmarks
 
 > **[https://prismml.com/news/ternary-bonsai](https://prismml.com/news/ternary-bonsai)**
 
-The definitive write-up on the Ternary Bonsai models. Covers what Ternary quantisation
-is ({-1, 0, +1} weights vs 1-bit {-1, +1}), why it achieves full FP16 accuracy at a
-fraction of the memory, benchmark results, and the roadmap for larger models.
-**Start here if you want to understand what you're running.**
+The definitive write-up. Covers what Ternary quantisation is ({-1, 0, +1} weights),
+why it achieves full FP16 accuracy at 7–8× less memory, benchmark results, and the roadmap.
 
 ---
 
 ## Watch first
 
-**[▶ Video 1 — PrismML: Introducing Ternary Bonsai Models](https://www.youtube.com/watch?v=tUSNN1nhSRM)** ← Start here
-The official PrismML video. Covers what Ternary models are, why they hit FP16 accuracy
-at 1-bit memory, and how to get them running locally. Full tutorial included.
+**[▶ Video 1 — PrismML: Introducing Ternary Bonsai](https://www.youtube.com/watch?v=tUSNN1nhSRM)** ← Start here
+The official PrismML video. Covers what Ternary models are, why they matter, and a full
+tutorial on running them locally.
 
 **[▶ Video 2 — Ternary Models deep dive](https://www.youtube.com/watch?v=lDlkkDs43aw)**
-Background, benchmarks, and a walkthrough of Ternary vs 1-bit vs FP16. Good second watch.
+Background, benchmarks, and why Ternary ({-1,0,+1}) beats pure 1-bit ({-1,+1}) for accuracy.
 
 **[▶ Video 3 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)**
-Original background on 1-bit quantisation and why it matters.
-
-> *"We can now get FP16 model accuracy but at 1-bit size. The entire idea of Ternary is
-> the best of both worlds."*
+Good background on why 1-bit quantisation matters and where it came from.
 
 ### Related links
 
@@ -54,8 +45,8 @@ Original background on 1-bit quantisation and why it matters.
 
 ## Recommended models
 
-Download these two GGUF files and place them in `~/.lmstudio/models/1-Bit-Bonsai/`
-(or any directory — set `MODEL_DIR` in the launcher to override).
+Place `.gguf` files anywhere under `~/.lmstudio/models/` — the launcher and in-UI
+model manager discover them automatically. Override with `MODEL_DIR` env var.
 
 | Model | Size | HuggingFace |
 |-------|------|-------------|
@@ -63,7 +54,6 @@ Download these two GGUF files and place them in `~/.lmstudio/models/1-Bit-Bonsai
 | Bonsai 8B Q1_0 | 1.1 GB | https://huggingface.co/prism-ml/Bonsai-8B-gguf |
 
 ```bash
-# Quick download (wget)
 mkdir -p ~/.lmstudio/models/1-Bit-Bonsai
 wget -P ~/.lmstudio/models/1-Bit-Bonsai \
     https://huggingface.co/prism-ml/Bonsai-1.7B-gguf/resolve/main/Bonsai-1.7B-Q1_0.gguf \
@@ -73,43 +63,64 @@ wget -P ~/.lmstudio/models/1-Bit-Bonsai \
 ## Quick start — Linux
 
 ```bash
-# 1. Prerequisites (once)
+# 1. Build tools (once)
 sudo apt-get install -y cmake build-essential
 
-# 2. Build — detects AVX512 automatically via -march=native
+# 2. Build llama-server with AVX512 (-march=native auto-detects)
 ./cmake-build.sh
 
 # 3. Install MCP search deps (once)
 ./setup-mcp-search.sh
 
-# 4. Launch — model picker, DuckDuckGo search, opens browser
-./start-up.sh
+# 4. Launch
+./start-up.sh            # interactive model picker
+./start-up.sh 1          # load model 1 directly
+CTX_SIZE=16384 ./start-up.sh   # longer context window
 ```
 
-`./start-up.sh 1` or `./start-up.sh 2` to skip the menu.
-Web UI at **http://localhost:8080** · MCP status at **http://localhost:8808**
+Web UI: **http://localhost:8080** · Model switcher: **http://localhost:8808**
+
+## Features
+
+### Model manager — inside the chat UI
+Click the **⚙ gear icon** (top-right) → **Models** tab (first item).
+
+- Lists every `.gguf` file under `~/.lmstudio/models/` grouped by folder with sizes
+- **Load** any model — unloads the current one and restarts the server automatically
+- **Unload** to free memory without loading another
+- Green "Loaded" badge on the active model; spinner during switch
+
+### DuckDuckGo web search — no API key
+The MCP server at `:8808` gives the model two tools: `web_search` and `news_search`.
+Pre-configured in `webui-config.json` — just say "search for X" in the chat.
+
+### Accurate token speed stats
+The stats row under each assistant message shows:
+- **t/s** — EMA-smoothed generation speed (OS-scheduler jitter filtered out)
+- **Speed log** — click to expand a per-response log with gen t/s, prompt t/s, avg and peak
+  (colour-coded: green >80, amber >40, red <40)
 
 ## Performance
 
-| Model | Hardware | Tokens/sec |
+| Model | Hardware | Gen speed |
 |-------|----------|-----------|
-| Bonsai 1.7B Q1_0 | 32-thread AVX512, CPU-only | ~130 tok/s |
-| Bonsai 8B Q1_0 | 32-thread AVX512, CPU-only | ~25–30 tok/s |
+| Bonsai 1.7B Q1_0 | 32-thread AVX512, CPU-only | ~90–130 tok/s |
+| Bonsai 8B Q1_0 | 32-thread AVX512, CPU-only | ~25–35 tok/s |
 
-> **Why CPU-only?** The Vulkan/CUDA GPU backends cannot execute `Q1_0_g128` kernels
-> natively. With a GPU build the scheduler creates ~227 CPU↔GPU sync points per
-> forward pass, which is slower than pure CPU. The AVX512 kernel in this fork
-> eliminates that overhead entirely.
+> **Why CPU-only beats GPU for Q1_0?** The Vulkan/CUDA backends can't execute
+> `Q1_0_g128` kernels natively — the scheduler bounces 227 times per forward pass between
+> CPU and GPU. This fork's AVX512 kernel runs everything on CPU with 1 graph split.
 
 ## What this fork changes
 
 | File | Change |
 |------|--------|
-| `ggml/src/ggml-cpu/arch/x86/quants.c` | AVX512 kernel for `Q1_0_g128` dot product (`_mm512_movm_epi8` + VNNI) |
-| `cmake-build.sh` | `-march=native` + `GGML_VULKAN=OFF` — correct defaults for Q1_0 models |
-| `start-up.sh` | Linux launcher: model picker, MCP server, browser auto-open |
-| `mcp-duckduckgo/` | DuckDuckGo web + news search via MCP — no API key needed |
-| `webui-config.json` | Pre-configures MCP endpoint in the llama.cpp Web UI |
+| `ggml/src/ggml-cpu/arch/x86/quants.c` | **AVX512 kernel** for `Q1_0_g128` — `_mm512_movm_epi8` + VNNI dot product |
+| `cmake-build.sh` | `-march=native` + `GGML_VULKAN=OFF` |
+| `start-up.sh` | Launcher: model picker, background servers, browser open |
+| `mcp-duckduckgo/server.py` | DuckDuckGo MCP server (streamable HTTP, no supergateway) |
+| `webui-config.json` | Pre-configures MCP endpoint |
+| `tools/server/webui/…` | **Models tab** in Settings, **speed log**, EMA t/s smoothing |
 
 ---
 
