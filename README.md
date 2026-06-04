@@ -21,15 +21,16 @@ why it achieves full FP16 accuracy at 7–8× less memory, benchmark results, an
 
 ## Watch first
 
-**[▶ Video 1 — PrismML: Introducing Ternary Bonsai](https://www.youtube.com/watch?v=tUSNN1nhSRM)** ← Start here
+**[▶ Video 1 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)** ← Start here
+What 1-bit quantisation is, why it matters, and where the whole idea came from.
+Watch this first if you're new to BitNet / 1-bit LLMs.
+
+**[▶ Video 2 — PrismML: Introducing Ternary Bonsai](https://www.youtube.com/watch?v=tUSNN1nhSRM)**
 The official PrismML video. Covers what Ternary models are, why they matter, and a full
 tutorial on running them locally.
 
-**[▶ Video 2 — Ternary Models deep dive](https://www.youtube.com/watch?v=lDlkkDs43aw)**
+**[▶ Video 3 — Ternary Models deep dive](https://www.youtube.com/watch?v=lDlkkDs43aw)**
 Background, benchmarks, and why Ternary ({-1,0,+1}) beats pure 1-bit ({-1,+1}) for accuracy.
-
-**[▶ Video 3 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)**
-Good background on why 1-bit quantisation matters and where it came from.
 
 ### Related links
 
