@@ -31,6 +31,7 @@ GPU_LAYERS="${GPU_LAYERS:-999}"
 # ── PIDs to clean up ──────────────────────────────────────────────────────────
 MCP_PID=""
 BROWSER_PID=""
+LLAMA_PID=""
 
 # ── Colours ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -42,6 +43,7 @@ die() { echo -e "${RED}[ERROR]${RESET} $*" >&2; exit 1; }
 cleanup() {
     echo ""
     echo -e "${YELLOW}Shutting down...${RESET}"
+    [[ -n "$LLAMA_PID"   ]] && kill "$LLAMA_PID"   2>/dev/null || true
     [[ -n "$MCP_PID"     ]] && kill "$MCP_PID"     2>/dev/null || true
     [[ -n "$BROWSER_PID" ]] && kill "$BROWSER_PID" 2>/dev/null || true
     echo -e "${GREEN}Done.${RESET}"
@@ -147,9 +149,9 @@ echo -e "${GREEN}MCP server ready.${RESET}"
 ) &
 BROWSER_PID=$!
 
-# ── Start llama-server (foreground — Ctrl+C stops everything) ─────────────────
+# ── Start llama-server as background process ──────────────────────────────────
 echo ""
-echo -e "${CYAN}Starting llama-server...  (Ctrl+C to stop all)${RESET}"
+echo -e "${CYAN}Starting llama-server...${RESET}"
 echo ""
 
 "$SERVER_BIN" \
@@ -160,4 +162,16 @@ echo ""
     --ctx-size           "$CTX_SIZE" \
     --threads            "$(nproc)" \
     --webui-mcp-proxy \
-    --webui-config-file  "$WEBUI_CFG"
+    --webui-config-file  "$WEBUI_CFG" \
+    &>/tmp/llama-server.log &
+LLAMA_PID=$!
+
+echo -e "${GREEN}llama-server started (PID $LLAMA_PID)${RESET}"
+echo -e "  Web UI  : http://localhost:$PORT"
+echo -e "  Switcher: http://localhost:$MCP_PORT/"
+echo -e "  Log     : /tmp/llama-server.log"
+echo ""
+echo -e "${YELLOW}Press Ctrl+C to stop all, or close this terminal to leave running.${RESET}"
+
+# Wait for llama-server so Ctrl+C propagates
+wait $LLAMA_PID

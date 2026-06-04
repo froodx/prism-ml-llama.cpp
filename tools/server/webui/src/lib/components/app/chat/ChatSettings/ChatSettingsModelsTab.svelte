@@ -141,7 +141,7 @@
 					</div>
 					<div class="space-y-0.5 rounded-lg border border-border/30 overflow-hidden">
 						{#each entries as entry}
-							{@const isCurrent = entry.name === current}
+							{@const isCurrent = serverReady && entry.name === current}
 							{@const isLoading = entry.name === switching}
 							<div
 								class="flex items-center gap-3 px-3 py-2.5 text-sm transition-colors
@@ -178,7 +178,7 @@
 									<button
 										class="shrink-0 rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground
 											hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-										disabled={!!switching || !serverReady}
+										disabled={!!switching}
 										onclick={() => doSwitch(entry)}
 									>
 										Load

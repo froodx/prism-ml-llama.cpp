@@ -243,15 +243,17 @@ function render() {{
     html += `<div class="folder-group">
       <div class="section-label">${{folder}}</div>`;
     ms.forEach((m, idx) => {{
-      const isCurrent  = current && m.name === current;
+      // Only show as "current" when server is actually ready with that model loaded
+      const isCurrent  = serverReady && current && m.name === current;
       const isLoading  = switching === m.name;
-      const disabled   = !!switching || !serverReady;
+      // Load is always available unless a switch/unload is already in progress
+      const loadDisabled = !!switching;
       let badge = '';
       if (isCurrent) badge = `
         <span class="badge badge-current">&#10003; Loaded</span>
-        <button class="btn-unload" ${{disabled?'disabled':''}} onclick="doUnload()">Unload</button>`;
+        <button class="btn-unload" ${{loadDisabled?'disabled':''}} onclick="doUnload()">Unload</button>`;
       else if (isLoading) badge = `<span class="badge badge-loading">Loading...</span>`;
-      else badge = `<button class="btn-load" ${{disabled?'disabled':''}}
+      else badge = `<button class="btn-load" ${{loadDisabled?'disabled':''}}
                       onclick="doSwitch(${{models.indexOf(m)}})">Load</button>`;
       html += `<div class="model-row ${{isCurrent?'is-current':''}}">
         <span class="model-name" title="${{m.name}}">${{m.name}}</span>
