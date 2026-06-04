@@ -14,10 +14,27 @@
 
 ## Watch first
 
-Before diving in, this video gives a great overview of what these 1-bit models are
-and why they matter:
+**[▶ Video 1 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)**
+A good starting point for understanding what 1-bit quantisation is and why it matters.
 
-**[▶ Watch on YouTube](https://www.youtube.com/watch?v=0fWFetwHkVE)**
+**[▶ Video 2 — Ternary Models: FP16 accuracy at 1-bit size](https://www.youtube.com/watch?v=lDlkkDs43aw)**
+PrismML's Ternary models take 1-bit a step further — weights are {-1, 0, +1} instead of
+just {-1, +1}, giving full FP16 accuracy at 7–8× less memory than FP16. This video covers
+the background, the benchmarks, and a full walkthrough of running Ternary models locally.
+If you only watch one video, make it this one.
+
+> *"We can now get FP16 model accuracy but at 1-bit size. The entire idea of Ternary is
+> the best of both worlds."*
+
+### Related links
+
+| Resource | Link |
+|----------|------|
+| AnythingLLM (easy local UI) | https://anythingllm.com/ |
+| Original BitNet research (Microsoft) | https://github.com/microsoft/BitNet |
+| PrismML Ternary blog & benchmarks | https://prismml.com/news/ternary-bonsai |
+| Ternary model collection (HuggingFace) | https://huggingface.co/collections/prism-ml |
+| Upstream custom llama.cpp (PrismML) | https://github.com/PrismML-Eng/llama.cpp |
 
 ---
 
