@@ -41,8 +41,8 @@
 				// If the server came back with the model we were switching to, done
 				if (switching && d.ready && d.model === switching) {
 					switching = null;
-					// Nudge the server store to re-fetch props so the rest of the UI updates
-					serverStore.fetchServerData();
+					// Re-fetch server props so the rest of the UI updates
+					serverStore.fetch();
 				}
 			}
 		} catch {

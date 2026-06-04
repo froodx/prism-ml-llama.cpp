@@ -45,7 +45,7 @@
 				mcpError = false;
 				if (switching && d.ready && d.model === switching) {
 					switching = null;
-					serverStore.fetchServerData();
+					serverStore.fetch();
 				}
 			}
 		} catch {
