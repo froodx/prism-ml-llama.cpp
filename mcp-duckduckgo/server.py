@@ -145,6 +145,8 @@ h1{{font-size:1.35rem;font-weight:600;color:#fff;margin-bottom:.25rem}}
 .btn-load{{background:#2563eb;color:#fff;border:none;font-size:.78rem;font-weight:600;padding:.3rem .85rem;border-radius:5px;cursor:pointer;transition:background .15s}}
 .btn-load:hover:not(:disabled){{background:#1d4ed8}}
 .btn-load:disabled{{background:#1e1e1e;color:#444;cursor:not-allowed}}
+.btn-unload{{background:transparent;color:#ef4444;border:1px solid #ef444433;font-size:.78rem;font-weight:600;padding:.3rem .85rem;border-radius:5px;cursor:pointer;transition:all .15s}}
+.btn-unload:hover:not(:disabled){{background:#ef444415;border-color:#ef4444}}
 .open-ui{{display:inline-flex;align-items:center;gap:.4rem;margin-top:1.6rem;color:#3b82f6;font-size:.85rem;text-decoration:none}}
 .open-ui:hover{{color:#60a5fa}}
 .mcp-info{{margin-top:2rem;font-size:.75rem;color:#383838;border-top:1px solid #1a1a1a;padding-top:1rem}}
@@ -210,7 +212,10 @@ async function pollStatus() {{
 function updateStatus() {{
   const dot = document.getElementById('dot');
   const txt = document.getElementById('status-text');
-  if (switching) {{
+  if (switching === '__unloading__') {{
+    dot.className = 'dot amber';
+    txt.textContent = 'Unloading model...';
+  }} else if (switching) {{
     dot.className = 'dot amber';
     txt.textContent = `Loading ${{switching}} — please wait...`;
   }} else if (serverReady) {{
@@ -242,7 +247,9 @@ function render() {{
       const isLoading  = switching === m.name;
       const disabled   = !!switching || !serverReady;
       let badge = '';
-      if (isCurrent)     badge = `<span class="badge badge-current">&#10003; Loaded</span>`;
+      if (isCurrent) badge = `
+        <span class="badge badge-current">&#10003; Loaded</span>
+        <button class="btn-unload" ${{disabled?'disabled':''}} onclick="doUnload()">Unload</button>`;
       else if (isLoading) badge = `<span class="badge badge-loading">Loading...</span>`;
       else badge = `<button class="btn-load" ${{disabled?'disabled':''}}
                       onclick="doSwitch(${{models.indexOf(m)}})">Load</button>`;
@@ -255,6 +262,18 @@ function render() {{
     html += '</div>';
   }}
   document.getElementById('model-list').innerHTML = html;
+}}
+
+async function doUnload() {{
+  if (switching) return;
+  switching = '__unloading__';
+  updateStatus();
+  render();
+  try {{
+    await fetch(`http://localhost:${{MCP}}/unload`, {{method:'POST'}});
+  }} catch(e) {{}}
+  switching = null;
+  await pollStatus();
 }}
 
 async function doSwitch(idx) {{
@@ -291,13 +310,13 @@ pollStatus();
 
 if __name__ == "__main__":
     if "--streamable-http" in sys.argv:
-        import uvicorn
+        import asyncio
         import json as _json
         import urllib.request
-        from starlette.applications import Starlette
+        import uvicorn
         from starlette.requests import Request
         from starlette.responses import HTMLResponse, JSONResponse
-        from starlette.routing import Mount, Route
+        from starlette.routing import Route
 
         async def homepage(request: Request) -> HTMLResponse:
             return HTMLResponse(_SWITCHER_HTML.format(
@@ -310,8 +329,6 @@ if __name__ == "__main__":
             return JSONResponse(_scan_models())
 
         async def api_current(request: Request) -> JSONResponse:
-            """Proxy check to llama-server /v1/models — avoids browser CORS."""
-            import asyncio
             def _check():
                 try:
                     with urllib.request.urlopen(
@@ -328,11 +345,10 @@ if __name__ == "__main__":
             return JSONResponse(result)
 
         async def api_switch(request: Request) -> JSONResponse:
-            data     = await request.json()
+            data = await request.json()
             model_path = data.get("model_path", "")
             if not model_path or not Path(model_path).exists():
                 return JSONResponse({"error": "model not found"}, status_code=400)
-            import asyncio
             await asyncio.get_event_loop().run_in_executor(None, _kill_llama)
             await asyncio.sleep(0.8)
             try:
@@ -341,22 +357,29 @@ if __name__ == "__main__":
                 return JSONResponse({"error": str(e)}, status_code=500)
             return JSONResponse({"status": "starting", "model": Path(model_path).name})
 
+        async def api_unload(request: Request) -> JSONResponse:
+            await asyncio.get_event_loop().run_in_executor(None, _kill_llama)
+            return JSONResponse({"status": "unloaded"})
+
+        # Prepend our routes onto the FastMCP app so its lifespan stays intact.
+        # Wrapping in a new Starlette app loses the session manager lifespan.
         mcp_app = mcp.streamable_http_app()
-        app = Starlette(routes=[
+        mcp_app.router.routes = [
             Route("/",        homepage),
             Route("/models",  api_models),
             Route("/current", api_current),
-            Route("/switch",  api_switch, methods=["POST"]),
-            Mount("/",        app=mcp_app),
-        ])
-        app.add_middleware(
+            Route("/switch",  api_switch,  methods=["POST"]),
+            Route("/unload",  api_unload,  methods=["POST"]),
+        ] + list(mcp_app.router.routes)
+        mcp_app.middleware_stack = None
+        mcp_app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
-        uvicorn.run(app, host="0.0.0.0", port=_port, log_level="warning")
+        uvicorn.run(mcp_app, host="0.0.0.0", port=_port, log_level="warning")
 
     elif "--sse" in sys.argv:
         mcp.run(transport="sse")

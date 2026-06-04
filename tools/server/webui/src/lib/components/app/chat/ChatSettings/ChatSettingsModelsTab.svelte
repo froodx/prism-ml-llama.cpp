@@ -54,6 +54,17 @@
 		}
 	}
 
+	async function doUnload() {
+		if (switching) return;
+		switching = '__unloading__';
+		try {
+			await fetch(`${MCP}/unload`, { method: 'POST' });
+		} catch {}
+		switching = null;
+		await pollCurrent();
+		serverStore.fetch();
+	}
+
 	async function doSwitch(entry: ModelEntry) {
 		if (switching) return;
 		switching = entry.name;
@@ -90,7 +101,10 @@
 <div class="space-y-4">
 	<!-- Status bar -->
 	<div class="flex items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-3 py-2.5 text-sm">
-		{#if switching}
+		{#if switching === '__unloading__'}
+			<Loader2 class="h-3.5 w-3.5 shrink-0 animate-spin text-amber-500" />
+			<span class="text-muted-foreground">Unloading model…</span>
+		{:else if switching}
 			<Loader2 class="h-3.5 w-3.5 shrink-0 animate-spin text-amber-500" />
 			<span class="text-muted-foreground">Loading <span class="font-medium text-foreground">{switching}</span>…</span>
 		{:else if serverReady && current}
@@ -147,6 +161,14 @@
 									<span class="shrink-0 rounded-full bg-green-500/20 px-2 py-0.5 text-[11px] font-semibold text-green-400">
 										Loaded
 									</span>
+									<button
+										class="shrink-0 rounded-md border border-red-500/30 px-3 py-1 text-xs font-semibold text-red-400
+											hover:border-red-500 hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+										disabled={!!switching}
+										onclick={doUnload}
+									>
+										Unload
+									</button>
 								{:else if isLoading}
 									<span class="flex shrink-0 items-center gap-1 text-xs text-amber-400">
 										<Loader2 class="h-3 w-3 animate-spin" />
