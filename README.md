@@ -2,15 +2,28 @@
 > This is a custom fork of the [Prism-ML fork of llama.cpp](https://github.com/PrismML-Eng/llama.cpp),
 > itself synced to the main llama.cpp repo.
 >
-> **The purpose of this fork is to run Prism-ML's specialised 1-bit Bonsai models at full speed on Linux.**
+> **The purpose of this fork is to run Prism-ML's specialised 1-bit and Ternary Bonsai models at full speed on Linux.**
 > It adds an AVX512 kernel for the `Q1_0_g128` quantisation format, turning what was
 > effectively a scalar fallback into a vectorised dot-product that achieves ~130 tokens/sec
 > on a 32-thread AVX512 machine (Zen 4, Ice Lake+) — without any GPU required.
 >
-> It also ships ready-to-use launcher scripts, a DuckDuckGo MCP search server, and
-> a one-command build that auto-detects AVX512 via `-march=native`.
+> It also ships ready-to-use launcher scripts, a live model switcher, a DuckDuckGo MCP
+> search server, and a one-command build that auto-detects AVX512 via `-march=native`.
 >
 > Not an official Prism-ML product. Experimental.
+
+---
+
+## 📖 Read: PrismML Ternary Bonsai — Blog & Benchmarks
+
+> **[https://prismml.com/news/ternary-bonsai](https://prismml.com/news/ternary-bonsai)**
+
+The definitive write-up on the Ternary Bonsai models. Covers what Ternary quantisation
+is ({-1, 0, +1} weights vs 1-bit {-1, +1}), why it achieves full FP16 accuracy at a
+fraction of the memory, benchmark results, and the roadmap for larger models.
+**Start here if you want to understand what you're running.**
+
+---
 
 ## Watch first
 
