@@ -5,6 +5,7 @@
  * Used for both sidebar navigation and mobile horizontal scroll menu.
  */
 export const SETTINGS_SECTION_TITLES = {
+	MODELS: 'Models',
 	GENERAL: 'General',
 	DISPLAY: 'Display',
 	SAMPLING: 'Sampling',

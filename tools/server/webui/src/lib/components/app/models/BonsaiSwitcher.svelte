@@ -5,8 +5,8 @@
 	import { Button } from '$lib/components/ui/button';
 	import { serverStore } from '$lib/stores/server.svelte';
 
-	// MCP server is always on the same host, port 8808
-	const MCP = `http://${window.location.hostname}:8808`;
+	// MCP server is always localhost:8808 (same machine as the model runner)
+	const MCP = 'http://localhost:8808';
 
 	interface ModelEntry {
 		path: string;
