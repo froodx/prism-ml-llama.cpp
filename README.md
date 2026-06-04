@@ -27,14 +27,15 @@ fraction of the memory, benchmark results, and the roadmap for larger models.
 
 ## Watch first
 
-**[▶ Video 1 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)**
-A good starting point for understanding what 1-bit quantisation is and why it matters.
+**[▶ Video 1 — PrismML: Introducing Ternary Bonsai Models](https://www.youtube.com/watch?v=tUSNN1nhSRM)** ← Start here
+The official PrismML video. Covers what Ternary models are, why they hit FP16 accuracy
+at 1-bit memory, and how to get them running locally. Full tutorial included.
 
-**[▶ Video 2 — Ternary Models: FP16 accuracy at 1-bit size](https://www.youtube.com/watch?v=lDlkkDs43aw)**
-PrismML's Ternary models take 1-bit a step further — weights are {-1, 0, +1} instead of
-just {-1, +1}, giving full FP16 accuracy at 7–8× less memory than FP16. This video covers
-the background, the benchmarks, and a full walkthrough of running Ternary models locally.
-If you only watch one video, make it this one.
+**[▶ Video 2 — Ternary Models deep dive](https://www.youtube.com/watch?v=lDlkkDs43aw)**
+Background, benchmarks, and a walkthrough of Ternary vs 1-bit vs FP16. Good second watch.
+
+**[▶ Video 3 — Introduction to 1-bit models](https://www.youtube.com/watch?v=0fWFetwHkVE)**
+Original background on 1-bit quantisation and why it matters.
 
 > *"We can now get FP16 model accuracy but at 1-bit size. The entire idea of Ternary is
 > the best of both worlds."*

@@ -110,3 +110,13 @@ export { default as ModelBadge } from './ModelBadge.svelte';
  * Respects the user's `showRawModelNames` setting.
  */
 export { default as ModelId } from './ModelId.svelte';
+
+/**
+ * **BonsaiSwitcher** - Model switcher for single-model mode
+ *
+ * Dropdown that lists all .gguf models from the filesystem (via the MCP
+ * server at :8808/models) and switches the running model by calling
+ * :8808/switch. Unloads the current model and reloads with the selection.
+ * Polls :8808/current until the new model is ready, then refreshes server state.
+ */
+export { default as BonsaiSwitcher } from './BonsaiSwitcher.svelte';
