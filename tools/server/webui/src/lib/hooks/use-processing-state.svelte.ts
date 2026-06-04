@@ -37,6 +37,10 @@ export function useProcessingState(): UseProcessingStateReturn {
 	let lastKnownState = $state<ApiProcessingState | null>(null);
 	let lastKnownProcessingStats = $state<LiveProcessingStats | null>(null);
 
+	// EMA-smoothed t/s — eliminates OS-scheduler jitter from cumulative average
+	// α=0.25: smooth but still responsive. Skip token 1 (warmup anomaly).
+	let smoothedTps = $state(0);
+
 	// Derive processing state reactively from chatStore's direct state
 	const processingState = $derived.by(() => {
 		if (!isMonitoring) {
@@ -50,6 +54,18 @@ export function useProcessingState(): UseProcessingStateReturn {
 	$effect(() => {
 		if (processingState && isMonitoring) {
 			lastKnownState = processingState;
+		}
+	});
+
+	// Update EMA whenever the server reports a new predicted_per_second
+	$effect(() => {
+		const tps = processingState?.tokensPerSecond ?? 0;
+		const n   = processingState?.tokensDecoded  ?? 0;
+		if (n === 0) {
+			smoothedTps = 0;  // reset between responses
+		} else if (tps > 0 && n > 1) {
+			// Skip n=1: first token always has near-zero predicted_ms → 1M t/s spike
+			smoothedTps = smoothedTps === 0 ? tps : 0.25 * tps + 0.75 * smoothedTps;
 		}
 	});
 
@@ -288,23 +304,23 @@ export function useProcessingState(): UseProcessingStateReturn {
 	}
 
 	/**
-	 * Returns live generation statistics for display (token generation phase)
+	 * Returns live generation statistics for display (token generation phase).
+	 * Uses EMA-smoothed t/s so OS-scheduler jitter doesn't tank the number.
 	 */
 	function getLiveGenerationStats(): LiveGenerationStats | null {
 		if (!processingState) return null;
 
-		const { tokensDecoded, tokensPerSecond } = processingState;
-
+		const { tokensDecoded } = processingState;
 		if (tokensDecoded <= 0) return null;
 
-		// Calculate time from tokens and speed
-		const timeMs =
-			tokensPerSecond && tokensPerSecond > 0 ? (tokensDecoded / tokensPerSecond) * 1000 : 0;
+		// Use smoothed value; fall back to raw only if smoothing hasn't kicked in yet
+		const displayTps = smoothedTps > 0 ? smoothedTps : (processingState.tokensPerSecond || 0);
+		const timeMs     = displayTps > 0 ? (tokensDecoded / displayTps) * 1000 : 0;
 
 		return {
 			tokensGenerated: tokensDecoded,
 			timeMs,
-			tokensPerSecond: tokensPerSecond || 0
+			tokensPerSecond: displayTps
 		};
 	}
 

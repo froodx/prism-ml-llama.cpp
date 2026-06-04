@@ -6,6 +6,8 @@
 	import type { ChatMessageAgenticTimings } from '$lib/types/chat';
 	import { formatPerformanceTime } from '$lib/utils';
 	import { MS_PER_SECOND, DEFAULT_PERFORMANCE_TIME } from '$lib/constants';
+	import SpeedLog from './SpeedLog.svelte';
+	import { singleModelName } from '$lib/stores/models.svelte';
 
 	interface Props {
 		predictedTokens?: number;
@@ -112,8 +114,26 @@
 	);
 
 	let formattedAgenticTotalTime = $derived(formatPerformanceTime(agenticTotalTimeMs));
+
+	let speedLogRef: SpeedLog | undefined = $state(undefined);
+
+	// Record to speed log when a non-live response finishes with valid generation stats
+	$effect(() => {
+		if (!isLive && hasGenerationStats && predictedTokens && predictedMs && speedLogRef) {
+			speedLogRef.record({
+				model: singleModelName() ?? 'unknown',
+				tokens: predictedTokens,
+				tps: (predictedTokens / predictedMs) * MS_PER_SECOND,
+				promptTokens: promptTokens ?? 0,
+				promptTps: promptTokens && promptMs && promptMs > 0
+					? (promptTokens / promptMs) * MS_PER_SECOND
+					: 0
+			});
+		}
+	});
 </script>
 
+<div class="inline-flex flex-col">
 <div class="inline-flex items-center text-xs text-muted-foreground">
 	<div class="inline-flex items-center rounded-sm bg-muted-foreground/15 p-0.5">
 		{#if hasPromptStats || isLive}
@@ -300,4 +320,7 @@
 			/>
 		{/if}
 	</div>
+</div>
+
+<SpeedLog bind:this={speedLogRef} />
 </div>
