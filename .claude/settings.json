@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(*)",
+      "PowerShell(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "TodoWrite(*)",
+      "Agent(*)",
+      "Skill(*)",
+      "ToolSearch(*)",
+      "AskUserQuestion(*)",
+      "NotebookEdit(*)",
+      "Monitor(*)",
+      "CronCreate(*)",
+      "CronDelete(*)",
+      "CronList(*)",
+      "EnterPlanMode(*)",
+      "ExitPlanMode(*)",
+      "EnterWorktree(*)",
+      "ExitWorktree(*)",
+      "ListMcpResourcesTool(*)",
+      "ReadMcpResourceTool(*)",
+      "RemoteTrigger(*)",
+      "TaskOutput(*)",
+      "TaskStop(*)",
+      "PushNotification(*)",
+      "ScheduleWakeup(*)",
+      "mcp__*"
+    ],
+    "deny": []
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true
+}
