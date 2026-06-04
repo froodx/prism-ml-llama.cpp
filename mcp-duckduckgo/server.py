@@ -1,13 +1,20 @@
 """DuckDuckGo web search MCP server — no API key required."""
 
-from mcp.server.fastmcp import FastMCP
+import sys
 
 try:
-    from ddgs import DDGS
+    from ddgs import DDGS  # type: ignore[import-untyped]
 except ImportError:
-    from duckduckgo_search import DDGS  # legacy name
+    from duckduckgo_search import DDGS  # type: ignore[import-untyped]
 
-mcp = FastMCP("duckduckgo-search")
+from mcp.server.fastmcp import FastMCP
+from starlette.middleware.cors import CORSMiddleware
+
+_port = 8808
+if "--port" in sys.argv:
+    _port = int(sys.argv[sys.argv.index("--port") + 1])
+
+mcp = FastMCP("duckduckgo-search", host="0.0.0.0", port=_port, stateless_http=True)
 
 @mcp.tool()
 def web_search(query: str, max_results: int = 5) -> str:
@@ -32,4 +39,20 @@ def news_search(query: str, max_results: int = 5) -> str:
     return "\n".join(lines)
 
 if __name__ == "__main__":
-    mcp.run(transport="stdio")
+    if "--streamable-http" in sys.argv:
+        import uvicorn
+        app = mcp.streamable_http_app()
+        # Force middleware stack rebuild so CORS is applied
+        app.middleware_stack = None
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        uvicorn.run(app, host="0.0.0.0", port=_port, log_level="warning")
+    elif "--sse" in sys.argv:
+        mcp.run(transport="sse")
+    else:
+        mcp.run(transport="stdio")

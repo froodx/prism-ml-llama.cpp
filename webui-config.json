@@ -1,5 +1,5 @@
 {
-  "mcpServers": "[{\"url\":\"http://localhost:8808/sse\",\"name\":\"DuckDuckGo Search\"}]",
+  "mcpServers": "[{\"url\":\"http://localhost:8808/mcp\",\"name\":\"DuckDuckGo Search\",\"enabled\":true,\"useProxy\":false}]",
   "agenticMaxTurns": 20,
   "alwaysShowAgenticTurns": true
 }
